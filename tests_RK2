@@ -1,0 +1,73 @@
+from main import CD, Lib, CDLib, sorting_by_name, sorting_by_sum_size, output_files_of_catalogs_with_PAPKA2
+import unittest
+
+
+class Tests(unittest.TestCase):
+    def setUp(self):
+
+        self.bibl = [
+            Lib(1, 'vip- библиотека Ласточка'),
+            Lib(2, 'библиотека Тутик'),
+            Lib(3, 'vip- библиотека Подслушка'),
+            Lib(11, 'библиотека Читай'),
+            Lib(22, 'библиотека Умник'),
+            Lib(33, 'vip- библиотека CD'),
+        ]
+        # Файлы
+        self.cds = [
+            CD(1, 'диск Глаша', 2500, 1),
+            CD(2, 'диск Лямур', 3500, 2),
+            CD(3, 'диск Киберпанк', 400, 3),
+            CD(4, 'диск Стас Михайлов', 3000, 3),
+            CD(5, 'диск Брежнева', 250, 3),
+        ]
+        self.cds_bibl = [
+            CDLib(1, 1),
+            CDLib(2, 2),
+            CDLib(3, 3),
+            CDLib(3, 4),
+            CDLib(3, 5),
+            CDLib(11, 1),
+            CDLib(22, 2),
+            CDLib(33, 3),
+            CDLib(33, 4),
+            CDLib(33, 5),
+        ]
+        # Соединение данных один-ко-многим
+        self.one_to_many = [(e.names, e.cost, d.name)
+                            for d in bibl
+                            for e in cds
+                            if e.dep_id == d.id]
+
+        # Соединение данных многие-ко-многим
+        self.many_to_many_temp = [(d.name, ed.dep_id, ed.emp_id)
+                                  for d in bibl
+                                  for ed in cds_bibl
+                                  if d.id == ed.dep_id]
+
+        self.many_to_many = [(e.names, e.cost, dep_name)
+                             for dep_name, dep_id, emp_id in many_to_many_temp
+                             for e in cds if e.id == emp_id]
+
+    def test_sorting_by_name(self):
+        result = sorting_by_name(self.one_to_many)
+        desired_result = [('диск Глаша', 2500, 'vip- библиотека Ласточка'),
+                          ('диск Киберпанк', 400, 'vip- библиотека Подслушка'),
+                          ('диск Стас Михайлов', 3000, 'vip- библиотека Подслушка'),
+                          ('диск Брежнева', 250, 'vip- библиотека Подслушка'),
+                          ('диск Лямур', 3500, 'библиотека Тутик')]
+
+        self.assertEqual(result, desired_result)
+
+    def test_sorting_by_sum(self):
+        result = sorting_by_sum_size(self.one_to_many, self.catalogs)
+        desired_result = [('vip- библиотека Подслушка', 3650), ('библиотека Тутик', 3500),
+                          ('vip- библиотека Ласточка', 2500)]
+        self.assertEqual(result, desired_result)
+
+    def test_output_PAPKA2(self):
+        result = output_files_of_catalogs_with_PAPKA2(self.many_to_many, self.catalogs)
+        desired_result = {'vip- библиотека Ласточка': ['диск Глаша'],
+                          'vip- библиотека Подслушка': ['диск Киберпанк', 'диск Стас Михайлов', 'диск Брежнева'],
+                          'vip- библиотека CD': ['диск Киберпанк', 'диск Стас Михайлов', 'диск Брежнева']}
+        self.assertEqual(result, desired_result)
